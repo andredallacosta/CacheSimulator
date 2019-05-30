@@ -4,7 +4,7 @@ import math
 import os
 
 class Cache:
-	def __init__(self, nsets, bsize, assoc):
+	def __init__(self, nsets=256, bsize=4, assoc=1):
 		self.nsets = int(nsets)
 		self.bsize = int(bsize)
 		self.assoc = int(assoc)
@@ -26,7 +26,16 @@ class Cache:
 		
 		#Entrada de inteiros
 		address = self.binToDecimal(address)
-		return address/self.bsize % self.nsets, address
+		if self.assoc == 1:
+			return address % self.nsets, address
+		else:
+			return int(float(address) / float(self.bsize)) % self.nsets, address
+
+
+	def insert(self, position, address, cache_set=None):
+		if cache_set is None:
+			cache_set = random.randint(0, self.assoc - 1)
+		self.cache[position][cache_set] = address
 
 	def binToDecimal(self, position):
 		position = '0b' + position
@@ -39,7 +48,7 @@ class Cache:
 			
 			#Compulsorio
 			if(self.cache[position][cache_set] == -1):
-				self.cache[position][cache_set] = address
+				self.insert(position, address, cache_set=cache_set)
 				self.misses['compulsory'] += 1
 				test = True
 			#hit
@@ -52,14 +61,12 @@ class Cache:
 			
 			#Capacidade
 			if self.nsets == 1:
-				cache_set = random.randint(0, self.assoc - 1)
-				self.cache[position][cache_set] = address
+				self.insert(position, address)
 				self.misses['capacity'] += 1
 			
 			#Conflito
 			else:
-				cache_set = random.randint(0, self.assoc - 1)
-				self.cache[position][cache_set] = address
+				self.insert(position, address)
 				self.misses['conflict'] += 1
 		self.total_accesses += 1
 
@@ -69,9 +76,9 @@ class Cache:
 		print('NSETS: {}\nBSIZE: {}\nASSOC: {}\n'.format(self.nsets, self.bsize, self.assoc))
 		print('\n__CACHE STATISTICS___')
 		print('TOTAL_ACCESSES: {}'.format(self.total_accesses))
-		print('TOTAL_HITS: {}\nTAXA_HITS: {}%'.format(self.hits, float(self.hits) / float(self.total_accesses) * 100))
+		print('TOTAL_HITS: {}\nTAXA_HITS: {:.2f}%'.format(self.hits, float(self.hits) / float(self.total_accesses) * 100))
 		print('TOTAL_MISSES: {}'.format(self.misses['compulsory'] + self.misses['capacity'] + self.misses['conflict']))
-		print('TAXA_MISSES: {}%'.format((float(self.misses['compulsory']) + float(self.misses['capacity']) + float(self.misses['conflict'])) / float(self.total_accesses) * 100))
+		print('TAXA_MISSES: {:.2f}%'.format((float(self.misses['compulsory']) + float(self.misses['capacity']) + float(self.misses['conflict'])) / float(self.total_accesses) * 100))
 		print('MISS_COMPULSORY: {}'.format(self.misses['compulsory']))
 		print('MISS_CONFLICT: {}'.format(self.misses['conflict']))
 		print('MISS_CAPACITY: {}'.format(self.misses['capacity']))
